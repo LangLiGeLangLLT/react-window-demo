@@ -1,16 +1,68 @@
-import Content from './_components/content'
+'use client'
 
-export type CommentData = Partial<{
-  postId: string
-  id: string
-  name: string
-  email: string
-  body: string
-}>
+import React from 'react'
+import {
+  List,
+  RowComponentProps,
+  useDynamicRowHeight,
+  useListRef,
+} from 'react-window'
+import { Button } from '@/components/ui/button'
+import { comments, Comment } from './constants'
 
-export default async function Page() {
-  const res = await fetch('https://jsonplaceholder.typicode.com/comments')
-  const comments = (await res.json()) as CommentData[]
+export default function Page() {
+  const [isClient, setIsClient] = React.useState(false)
 
-  return <Content comments={comments} />
+  React.useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  if (!isClient) return
+
+  return <Container comments={comments} />
+}
+
+function Container({ comments }: { comments: Comment[] }) {
+  const rowHeight = useDynamicRowHeight({ defaultRowHeight: 50 })
+  const listRef = useListRef(null)
+
+  function getItem(index: number) {
+    return comments[index]
+  }
+
+  function onScrollTo() {
+    if (listRef.current) {
+      listRef.current.scrollToRow({
+        index: comments.length - 1,
+        align: 'end',
+      })
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <List
+        listRef={listRef}
+        className="h-[300px]"
+        rowComponent={Row}
+        rowCount={comments.length}
+        rowHeight={rowHeight}
+        rowProps={{ getItem }}
+      />
+      <Button onClick={onScrollTo}>Scroll To Last</Button>
+    </div>
+  )
+}
+
+function Row({
+  index,
+  style,
+  getItem,
+}: RowComponentProps<{ getItem: (index: number) => Comment }>) {
+  return (
+    <div className="py-2 flex space-x-2" style={style}>
+      <span>{index}</span>
+      <span>{getItem(index).body}</span>
+    </div>
+  )
 }
